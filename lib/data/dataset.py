@@ -47,7 +47,7 @@ class TensorImageDataset(data.Dataset):
 
     def __getitem__(self, item):
         img, label = self.dataset[item]
-        return self.transorms(img), torch.LongTensor(label)
+        return self.transorms(img), torch.FloatTensor(label)
 
     def __len__(self):
         return len(self.dataset)
