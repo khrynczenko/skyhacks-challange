@@ -22,7 +22,7 @@ class ImageDataset(data.Dataset):
         paths_names = [elem[elem.rindex('\\') + 1:] for elem in paths]
         for i, name in enumerate(img_names):
             if name in paths_names:
-                self.data.append(paths[i])
+                self.data.append(paths[paths_names.index(name)])
                 self.labels.append(df.iloc[i].to_numpy())
 
     def __getitem__(self, item):
