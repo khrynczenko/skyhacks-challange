@@ -5,6 +5,8 @@ import os
 import cv2
 import pandas as pd
 from torch.utils import data
+from torchvision import transforms
+import torch
 
 
 class Column(enum.Enum):
@@ -33,3 +35,19 @@ class ImageDataset(data.Dataset):
 
     def __len__(self):
         return len(self.data)
+
+
+class TensorImageDataset(data.Dataset):
+    def __init__(self, dataset: ImageDataset):
+        self.dataset = dataset
+        self.transorms = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+
+    def __getitem__(self, item):
+        img, label = self.dataset[item]
+        return self.transorms(img), torch.LongTensor(label)
+
+    def __len__(self):
+        return len(self.dataset)
