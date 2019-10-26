@@ -32,6 +32,8 @@ class ImageDataset(data.Dataset):
         img = io.read_image(self.data[item])
         if img.ndim == 2:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        elif img.shape[-1] == 4:
+            img = img[..., :-1]
         return img, self.labels[item]
 
     def __len__(self):
