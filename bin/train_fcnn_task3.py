@@ -7,6 +7,7 @@ from lib.data.dataset import ImageDataset, TransformedImageDataset
 import cv2
 import torch
 from torch.optim import Adam
+from torch.utils.data import random_split
 
 from torch.utils.data import DataLoader
 from torch.nn import CrossEntropyLoss
@@ -14,9 +15,7 @@ from torchvision import transforms
 
 if __name__ == '__main__':
     train_dir_path = r'C:\skyhacks\main_task_data'
-    val_dir_path = r'C:\skyhacks\main_task_data'
-    train_csv_path = r'C:\Users\Michał Myller\PycharmProjects\skyhacks-challange\data\task3_train.csv'
-    val_csv_path = r'C:\Users\Michał Myller\PycharmProjects\skyhacks-challange\data\task3_valid.csv'
+    train_csv_path = r'C:\Users\Michał Myller\PycharmProjects\skyhacks-challange\data\task1.csv'
     artifacts_path = r'epochs-xd/'
     os.makedirs(artifacts_path, exist_ok=True)
 
@@ -27,8 +26,10 @@ if __name__ == '__main__':
     resize = functools.partial(cv2.resize, dsize=(224, 224))
     train_dataset = TransformedImageDataset(
         ImageDataset(train_dir_path, train_csv_path), [resize, to_tensor])
-    val_dataset = TransformedImageDataset(
-        ImageDataset(val_dir_path, val_csv_path), [resize, to_tensor])
+    train_set_len = int(len(train_dataset) * 0.85)
+    train_dataset, val_dataset = random_split(train_dataset, (train_set_len, int(len(train_dataset) - train_set_len)))
+    # val_dataset = TransformedImageDataset(
+    #     ImageDataset(val_dir_path, val_csv_path), [resize, to_tensor])
     train_dataloader = DataLoader(train_dataset, batch_size=5, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=5, shuffle=False)
 

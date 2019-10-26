@@ -175,7 +175,7 @@ def train_model_3(model, dataloaders, criterion, optimizer, num_epochs=25,
 
             running_loss = 0.0
             running_corrects = 0
-            accuracy1 = 0
+            accuracy1 = 0.0
             accuracy2 = 0
             # Iterate over data.
             for inputs, labels in tqdm(dataloaders[phase], total=len(dataloaders[phase])):
@@ -202,21 +202,22 @@ def train_model_3(model, dataloaders, criterion, optimizer, num_epochs=25,
 
                 # statistics
                 running_loss += loss.item()
-                accuracy1 += (torch.argmax(softmax(outputs1, dim=1), dim=1) == labels[:, 0]).sum() / labels.shape[0]
-                accuracy2 += (torch.argmax(softmax(outputs2, dim=1), dim=1) == labels[:, 1]).sum() / \
-                            labels.shape[0]
+                accuracy1 += (torch.argmax(softmax(outputs1, dim=1), dim=1) == labels[:, 0]).float().sum() / float(labels.shape[0])
+                accuracy2 += (torch.argmax(softmax(outputs2, dim=1), dim=1) == labels[:, 1]).float().sum() / \
+                            float(labels.shape[0])
+                pass
 
             epoch_loss = running_loss / len(dataloaders[phase])
             epoch_acc = running_corrects / (len(dataloaders[phase]) * labels.shape[1])
 
             print('{} Loss: {:.4f} Acc1: {:.4f} Acc2: {:.4f}'.format(
-                phase, epoch_loss, accuracy1, accuracy2))
+                phase, epoch_loss, accuracy1 / float(len(dataloaders[phase])), accuracy2 / float(len(dataloaders[phase]))))
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(model.state_dict(), os.path.join(r"/content/drive/My Drive", f"{epoch}.pt"))
+            torch.save(model.state_dict(), os.path.join(r"C:\skyhacks\artifacts", f"{epoch}.pt"))
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
