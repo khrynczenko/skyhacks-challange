@@ -2,6 +2,7 @@ import numpy as np
 import torch
 
 from torch import nn, Tensor
+from torch.nn.init import kaiming_normal
 from torchvision import models
 
 
@@ -25,22 +26,34 @@ class ModelTask1(nn.Sequential):
         return self.classifier(x)
 
 
-class ModelTask2(nn.Module):
+class ResNet(nn.Module):
     def __init__(self):
-        super(ModelTask2, self).__init__()
-        original_model = models.resnet18(pretrained=True)
-        modules = list(original_model.children())[:-1]
-        self.features = nn.Sequential(*modules)
-        for param in self.features.parameters():
-            param.requires_grad = False
-        self.fc = nn.Linear(original_model.fc.in_features, 6)
+        super(ResNet, self).__init__()
+        original_model = models.vgg19(pretrained=True).eval()
+        self.features = nn.Sequential(*list(original_model.features.children()))
+        for p in self.features.parameters():
+            p.requires_grad = False
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 6),
+        )
+        for m in self.classifier:
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
 
-    def forward(self, input):
-        out = self.features(input)
-        out = torch.flatten(out, 1)
-        out = self.fc(out)
-        return out
-
+    def forward(self, x):
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = x.reshape(1, 512 * 7 * 7)
+        x = self.classifier(x)
+        return x
 
 class FCNN(nn.Module):
     def __init__(self, non_linear_mapping_layers: int):

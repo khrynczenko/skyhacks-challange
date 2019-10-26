@@ -110,7 +110,8 @@ def train_model_2(model, dataloaders, criterion, optimizer, num_epochs=25,
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     preds = torch.argmax(outputs)
-                    loss = criterion(outputs, labels[0].long())
+                    labels = labels.long()[0, :]
+                    loss = criterion(outputs, labels)
 
                     # backward + optimize only if in training phase
                     if phase == 'train':
@@ -119,22 +120,20 @@ def train_model_2(model, dataloaders, criterion, optimizer, num_epochs=25,
 
                 # statistics
                 running_loss += loss.item()
-                running_corrects += np.sum(
-                    np.asarray(preds.detach().cpu().numpy(), dtype=np.uint8) == labels.detach().cpu().numpy())
+                running_corrects += (preds.int() == labels.int())
                 pass
 
             epoch_loss = running_loss / len(dataloaders[phase])
             epoch_acc = running_corrects / (len(dataloaders[phase]))
+            epoch_acc = epoch_acc.detach().cpu().numpy()
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc))
+            print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc[0]))
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
         torch.save(model.state_dict(), os.path.join("./artifacts", f"{epoch}.pt"))
-
 
         print()
 
