@@ -5,16 +5,16 @@ from lib.training import train_model
 from lib.data.dataset import ImageDataset, TensorImageDataset
 
 import torch
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 from torch.utils.data import DataLoader
-from torch.nn import BCELoss
+from torch.nn import MSELoss, BCEWithLogitsLoss
 
 if __name__ == '__main__':
-    train_dir_path = r'C:\skyhacks\mock'
-    val_dir_path = r'C:\skyhacks\mock'
-    train_csv_path = r'C:\Users\Michał Myller\PycharmProjects\skyhacks-challange\data\task1_train.csv'
-    val_csv_path = r'C:\Users\Michał Myller\PycharmProjects\skyhacks-challange\data\task1_train.csv'
-    artifacts_path = r'C:\Users\Michał Myller\Documents\datasets\skyhacks\artifacts'
+    train_dir_path = r'D:\Hypernet\skyhacks\main_task_data'
+    val_dir_path = r'D:\Hypernet\skyhacks\main_task_data'
+    train_csv_path = r'D:\Hypernet\skyhacks\skyhacks-challange-master\skyhacks-challange-master\data\task1_train.csv'
+    val_csv_path = r'D:\Hypernet\skyhacks\skyhacks-challange-master\skyhacks-challange-master\data\task1_valid.csv'
+    artifacts_path = r'D:\Hypernet\skyhacks\artifacts'
     os.makedirs(artifacts_path, exist_ok=True)
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -28,10 +28,10 @@ if __name__ == '__main__':
     model = ModelTask1(53)
     model = model.to(device)
     optimizer = Adam(model.parameters(), lr=0.001)
-    criterion = BCELoss()
+    criterion = BCEWithLogitsLoss()
 
     dataloaders = {'train': train_dataloader,
                    'val': val_dataloader}
     best_model = train_model(model, dataloaders, criterion, optimizer,
-                             num_epochs=1, device=device)
+                             num_epochs=100, device=device)
     torch.save(model.state_dict(), os.path.join(artifacts_path, "best_model.pt"))

@@ -12,7 +12,6 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25,
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
-
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -21,14 +20,17 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25,
         for phase in ['train', 'val']:
             if phase == 'train':
                 model.train()  # Set model to training mode
+
             else:
                 model.eval()  # Set model to evaluate mode
 
             running_loss = 0.0
             running_corrects = 0
-
+            results = []
+            targets = []
+            correct_rows = []
             # Iterate over data.
-            for inputs, labels in dataloaders[phase]:
+            for inputs, labels in tqdm(dataloaders[phase], total=len(dataloaders[phase])):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -39,7 +41,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25,
                 # track history if only in train
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
-                    preds = outputs > 0.5
+                    preds = Sigmoid()(outputs) > 0.5
                     loss = criterion(outputs, labels)
 
                     # backward + optimize only if in training phase
@@ -49,22 +51,25 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25,
 
                 # statistics
                 running_loss += loss.item()
-                running_corrects += np.sum(
-                    np.asarray(preds.detach().cpu().numpy(), dtype=np.uint8) == labels.detach().cpu().numpy())
+                correct_rows.append(np.all(np.asarray(preds.detach().cpu().numpy(), dtype=np.uint8) == labels.detach().cpu().numpy()))
+                running_corrects += np.sum(np.asarray(preds.detach().cpu().numpy(), dtype=np.uint8) == labels.detach().cpu().numpy())
+                results.append(np.asarray(preds.detach().cpu().numpy().flatten(), dtype=np.uint8))
+                targets.append(labels.detach().cpu().numpy().flatten())
                 pass
 
             epoch_loss = running_loss / len(dataloaders[phase])
+            f1score = f1_score(np.asarray(targets), np.asarray(results), average='samples')
             epoch_acc = running_corrects / (len(dataloaders[phase]) * labels.shape[1])
+            correct_rows = np.sum(correct_rows)
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc))
+            print('{} Loss: {:.4f} Acc: {:.4f} F1 Score {:.4f} Correct rows {}'.format(
+                phase, epoch_loss, epoch_acc, f1score, correct_rows))
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
-
-        print()
+            torch.save(model.state_dict(), os.path.join(r"D:\Hypernet\skyhacks\artifacts", f"{epoch}.pt"))
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(

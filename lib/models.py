@@ -6,23 +6,26 @@ from torchvision import models
 
 
 class ModelTask1(nn.Sequential):
-    def __init__(self, no_of_classes, num_of_neurons: int = 512,
+    def __init__(self, no_of_classes, num_of_neurons: int = 64,
                  freeze_extractor_weights: bool = True):
         super(ModelTask1, self).__init__()
-        self.extractor = models.resnet50(pretrained=True)
+        self.extractor = models.resnet34(pretrained=True)
         if freeze_extractor_weights:
             for param in self.extractor.parameters():
                 param.requires_grad = False
+        num_ftrs = self.extractor.fc.in_features
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=1000, out_features=num_of_neurons),
+            nn.Linear(in_features=num_ftrs, out_features=1024),
             nn.ReLU(),
-            nn.Linear(in_features=num_of_neurons, out_features=no_of_classes),
-            nn.Sigmoid()
+            nn.Linear(in_features=1024, out_features=512),
+            nn.ReLU(),
+            nn.Linear(in_features=512, out_features=no_of_classes),
+            # nn.Sigmoid()
         )
+        self.extractor.fc = self.classifier
 
     def forward(self, input: Tensor) -> Tensor:
-        x = self.extractor(input)
-        return self.classifier(x)
+        return self.extractor(input)
 
 
 class ResNet(nn.Module):
