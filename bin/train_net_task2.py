@@ -10,10 +10,10 @@ from torch.utils.data import DataLoader
 from torch.nn import CrossEntropyLoss, BCELoss, MultiLabelSoftMarginLoss
 
 if __name__ == '__main__':
-    train_dir_path = r'D:\main_task_data'
-    val_dir_path = r'D:\main_task_data'
-    train_csv_path = r'C:\Users\spiechaczek\Documents\skyhacks\skyhacks-challange\data\task2_train_categorized.csv'
-    val_csv_path = r'C:\Users\spiechaczek\Documents\skyhacks\skyhacks-challange\data\task2_valid_categorized.csv'
+    train_dir_path = r'/Users/szymek/Documents/idash/small'
+    val_dir_path = r'/Users/szymek/Documents/idash/small'
+    train_csv_path = r'/Users/szymek/Documents/skyhack/solution/skyhacks-challange/data/task2_train_categorized.csv'
+    val_csv_path = r'/Users/szymek/Documents/skyhack/solution/skyhacks-challange/data/task2_train_categorized.csv'
     artifacts_path = r'./artifacts'
     os.makedirs(artifacts_path, exist_ok=True)
 
