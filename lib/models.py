@@ -10,7 +10,6 @@ class ModelTask1(nn.Sequential):
         if freeze_extractor_weights:
             for param in self.extractor.parameters():
                 param.requires_grad = False
-        num_of_features = self.extractor.fc.in_features
         self.classifier = nn.Sequential(
             nn.Linear(in_features=1000, out_features=num_of_neurons),
             nn.ReLU(),

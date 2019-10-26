@@ -6,6 +6,7 @@ import cv2
 import pandas as pd
 from torch.utils import data
 from torchvision import transforms
+from lib.image import io
 import torch
 
 
@@ -28,7 +29,7 @@ class ImageDataset(data.Dataset):
                 self.labels.append(df.iloc[i].to_numpy())
 
     def __getitem__(self, item):
-        img = cv2.imread(self.data[item])
+        img = io.read_image(self.data[item])
         if img.ndim == 2:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
         return img, self.labels[item]
