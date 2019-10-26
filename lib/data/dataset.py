@@ -22,7 +22,7 @@ class ImageDataset(data.Dataset):
         del df[Column.FILENAME.value]
         self.data = []
         self.labels = []
-        paths_names = [elem[elem.rindex('\\') + 1:] for elem in paths]
+        paths_names = [os.path.basename(elem) for elem in paths]
         for i, name in enumerate(img_names):
             if name in paths_names:
                 self.data.append(paths[paths_names.index(name)])
