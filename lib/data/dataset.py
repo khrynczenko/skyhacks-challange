@@ -1,9 +1,11 @@
 import enum
 import glob
 import os
+from typing import Iterable, Callable, Union
 
 import cv2
 import pandas as pd
+import numpy as np
 from torch.utils import data
 from torchvision import transforms
 from lib.image import io
@@ -34,23 +36,23 @@ class ImageDataset(data.Dataset):
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
         elif img.shape[-1] == 4:
             img = img[..., :-1]
-        return img, self.labels[item]
+        return img, torch.FloatTensor(self.labels[item])
 
     def __len__(self):
         return len(self.data)
 
 
-class TensorImageDataset(data.Dataset):
-    def __init__(self, dataset: ImageDataset):
-        self.dataset = dataset
-        self.transorms = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ])
+class TransformedImageDataset(data.Dataset):
+    def __init__(self, dataset: ImageDataset, 
+                 image_transformations: Iterable[Callable[[np.ndarray], np.ndarray]]):
+        self._dataset = dataset
+        self._transformations = image_transformations
 
     def __getitem__(self, item):
-        img, label = self.dataset[item]
-        return self.transorms(img), torch.FloatTensor(label)
+        img, label = self._dataset[item]
+        for transformation in self._transformations:
+            img = transformation(img)
+        return img, label
 
     def __len__(self):
-        return len(self.dataset)
+        return len(self._dataset)

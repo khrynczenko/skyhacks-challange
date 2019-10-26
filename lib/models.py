@@ -1,8 +1,4 @@
-import numpy as np
-import torch
-
 from torch import nn, Tensor
-from torch.nn.init import kaiming_normal
 from torchvision import models
 
 
@@ -21,7 +17,6 @@ class ModelTask1(nn.Sequential):
             nn.Linear(in_features=1024, out_features=512),
             nn.ReLU(),
             nn.Linear(in_features=512, out_features=no_of_classes),
-            # nn.Sigmoid()
         )
         self.extractor.fc = self.classifier
 
@@ -65,23 +60,30 @@ class FCNN(nn.Module):
             nn.Conv2d(in_channels=3, out_channels=56,
                       kernel_size=5,
                       padding=2),
+            nn.BatchNorm2d(56),
             nn.PReLU())
         self.feature_extraction_2 = nn.Sequential(
             nn.Conv2d(in_channels=56, out_channels=20,
                       kernel_size=5, padding=2),
+            nn.Dropout2d(),
             nn.PReLU())
         self.non_linear_mapping = []
-        for _ in range(non_linear_mapping_layers):
+        for i in range(non_linear_mapping_layers):
             self.non_linear_mapping.append(
                 nn.Conv2d(in_channels=20, out_channels=20,
                           kernel_size=3,
                           padding=1))
+            if i % 2 == 0:
+                self.non_linear_mapping.append(nn.BatchNorm2d(20))
+            else:
+                self.non_linear_mapping.append(nn.Dropout2d())
             self.non_linear_mapping.append(nn.PReLU())
-        self.adaptive_pooling = nn.AdaptiveMaxPool2d((10, 10))
+        self.non_linear_mapping = nn.Sequential(*self.non_linear_mapping)
+        self.adaptive_pooling = nn.AdaptiveMaxPool2d((5, 5))
         self.fc = nn.Sequential(
-            nn.Linear(in_features=2000, out_features=500),
+            nn.Linear(in_features=500, out_features=128),
             nn.ReLU(),
-            nn.Linear(in_features=500, out_features=53),
+            nn.Linear(in_features=128, out_features=53),
             nn.Sigmoid()
         )
 
@@ -91,6 +93,6 @@ class FCNN(nn.Module):
         for mapping in self.non_linear_mapping:
             x = mapping(x)
         x = self.adaptive_pooling(x)
-        x = x.reshape((1, 1, 2000))
+        x = x.reshape((x.shape[0], 500))
         x = self.fc(x)
         return x

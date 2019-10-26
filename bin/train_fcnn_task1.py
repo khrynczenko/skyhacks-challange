@@ -2,30 +2,32 @@ import os
 
 from lib.models import FCNN
 from lib.training import train_model
-from lib.data.dataset import ImageDataset, TensorImageDataset
+from lib.data.dataset import ImageDataset, TransformedImageDataset
 
 import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn import BCELoss
+from torchvision import transforms
 
 if __name__ == '__main__':
     train_dir_path = r'C:\hackathon\main_task_data'
     val_dir_path = r'C:\hackathon\main_task_data'
     train_csv_path = r'data\task1_train.csv'
     val_csv_path = r'data\task1_valid.csv'
-    artifacts_path = r'.'
+    artifacts_path = r'epochs-xd/'
     os.makedirs(artifacts_path, exist_ok=True)
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     # Prepare data
-    train_dataset = TensorImageDataset(ImageDataset(train_dir_path, train_csv_path))
-    val_dataset = TensorImageDataset(ImageDataset(val_dir_path, val_csv_path))
+    to_tensor = transforms.ToTensor()
+    train_dataset = TransformedImageDataset(ImageDataset(train_dir_path, train_csv_path), [to_tensor])
+    val_dataset = TransformedImageDataset(ImageDataset(val_dir_path, val_csv_path), [to_tensor])
     train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
-    model = FCNN(53)
+    model = FCNN(4)
     model = model.to(device)
     optimizer = Adam(model.parameters(), lr=0.001)
     criterion = BCELoss()

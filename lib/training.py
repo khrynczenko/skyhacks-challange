@@ -7,7 +7,7 @@ import torch
 
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs=25,
-                device='cpu'):
+                device='cpu', artifacts_directory="artifacts/"):
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -30,7 +30,8 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25,
             targets = []
             correct_rows = []
             # Iterate over data.
-            for inputs, labels in tqdm(dataloaders[phase], total=len(dataloaders[phase])):
+            for inputs, labels in tqdm(dataloaders[phase], 
+                                       total=len(dataloaders[phase])):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -41,7 +42,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25,
                 # track history if only in train
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
-                    preds = Sigmoid()(outputs) > 0.5
+                    preds = outputs > 0.5
                     loss = criterion(outputs, labels)
 
                     # backward + optimize only if in training phase
@@ -58,18 +59,19 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25,
                 pass
 
             epoch_loss = running_loss / len(dataloaders[phase])
-            f1score = f1_score(np.asarray(targets), np.asarray(results), average='samples')
             epoch_acc = running_corrects / (len(dataloaders[phase]) * labels.shape[1])
             correct_rows = np.sum(correct_rows)
 
             print('{} Loss: {:.4f} Acc: {:.4f} F1 Score {:.4f} Correct rows {}'.format(
-                phase, epoch_loss, epoch_acc, f1score, correct_rows))
+                phase, epoch_loss, epoch_acc, correct_rows))
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(model.state_dict(), os.path.join(r"D:\Hypernet\skyhacks\artifacts", f"{epoch}.pt"))
+            torch.save(model.state_dict(), 
+                       os.path.join(artifacts_directory,
+                                    model.__class__.__name__ + f"-e{epoch}.pt"))
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
