@@ -26,27 +26,30 @@ class ModelTask1(nn.Sequential):
 
 
 class ResNet(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self):
         super(ResNet, self).__init__()
-
-        original_model = models.resnet18(pretrained=True)
-
-        self.features = nn.Sequential(*list(original_model.children())[:-1])
-
-        num_feats = original_model.fc.in_features
-
-        self.classifier = nn.Sequential(
-            nn.Linear(num_feats, num_classes)
-        )
-
-        for m in self.classifier:
-            kaiming_normal(m.weight)
-
+        original_model = models.vgg19(pretrained=True).eval()
+        self.features = nn.Sequential(*list(original_model.features.children()))
         for p in self.features.parameters():
             p.requires_grad = False
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 6),
+        )
+        for m in self.classifier:
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        f = self.features(x)
-        f = f.view(f.size(0), -1)
-        y = self.classifier(f)
-        return y
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = x.reshape(1, 512 * 7 * 7)
+        x = self.classifier(x)
+        return x
