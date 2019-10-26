@@ -23,8 +23,11 @@ class ImageDataset(data.Dataset):
 
     def __getitem__(self, item):
         img_name = self.df.iloc[item, 0]
-        paths = glob.glob(os.path.join(self.dir_path, '*', img_name))
-        assert len(paths) == 1
+        paths = []
+        for dir_entry in os.scandir(self.dir_path):
+            for image_entry in os.scandir(dir_entry.path):
+                if image_entry.name == img_name:
+                    paths.append(image_entry.path)
         img_path = paths[0]
         img = io.read_image(img_path)
         if img.ndim == 2:
@@ -34,7 +37,7 @@ class ImageDataset(data.Dataset):
         return img, torch.FloatTensor(np.asarray(self.df.iloc[item, 1:], dtype=np.uint8))
 
     def __len__(self):
-        return len(self.df.shape[0])
+        return self.df.shape[0]
 
 
 class TransformedImageDataset(data.Dataset):

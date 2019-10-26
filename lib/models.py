@@ -53,6 +53,7 @@ class ResNet(nn.Module):
         x = self.classifier(x)
         return x
 
+
 class FCNN1(nn.Module):
     def __init__(self, non_linear_mapping_layers: int):
         super().__init__()
@@ -65,7 +66,6 @@ class FCNN1(nn.Module):
         self.feature_extraction_2 = nn.Sequential(
             nn.Conv2d(in_channels=56, out_channels=20,
                       kernel_size=5, padding=2),
-            nn.Dropout2d(),
             nn.PReLU())
         self.non_linear_mapping = []
         for i in range(non_linear_mapping_layers):
@@ -75,8 +75,6 @@ class FCNN1(nn.Module):
                           padding=1))
             if i % 2 == 0:
                 self.non_linear_mapping.append(nn.BatchNorm2d(20))
-            else:
-                self.non_linear_mapping.append(nn.Dropout2d())
             self.non_linear_mapping.append(nn.PReLU())
         self.non_linear_mapping = nn.Sequential(*self.non_linear_mapping)
         self.adaptive_pooling = nn.AdaptiveMaxPool2d((5, 5))
@@ -97,6 +95,45 @@ class FCNN1(nn.Module):
         x = self.fc(x)
         return x
 
+
+class FCNN2(nn.Module):
+    def __init__(self, non_linear_mapping_layers: int):
+        super().__init__()
+        self.feature_extraction_1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=56,
+                      kernel_size=5,
+                      padding=2),
+            nn.BatchNorm2d(56),
+            nn.PReLU())
+        self.feature_extraction_2 = nn.Sequential(
+            nn.Conv2d(in_channels=56, out_channels=20,
+                      kernel_size=5, padding=2),
+            nn.PReLU())
+        self.non_linear_mapping = []
+        for i in range(non_linear_mapping_layers):
+            self.non_linear_mapping.append(
+                nn.Conv2d(in_channels=20, out_channels=20,
+                          kernel_size=3,
+                          padding=1))
+            if i % 2 == 0:
+                self.non_linear_mapping.append(nn.BatchNorm2d(20))
+            self.non_linear_mapping.append(nn.PReLU())
+        self.non_linear_mapping = nn.Sequential(*self.non_linear_mapping)
+        self.adaptive_pooling = nn.AdaptiveMaxPool2d((5, 5))
+        self.fc = nn.Sequential(
+            nn.Linear(in_features=500, out_features=128),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=6),
+        )
+    def forward(self, x):
+        x = self.feature_extraction_1(x)
+        x = self.feature_extraction_2(x)
+        for mapping in self.non_linear_mapping:
+            x = mapping(x)
+        x = self.adaptive_pooling(x)
+        x = x.reshape((x.shape[0], 500))
+        out = self.fc(x)
+        return out
 
 class FCNN3(nn.Module):
     def __init__(self, non_linear_mapping_layers: int):
