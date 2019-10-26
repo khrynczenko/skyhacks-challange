@@ -1,13 +1,13 @@
 import os
 
-from lib.models import ModelTask2
+from lib.models import ResNet
 from lib.training import train_model_2
 from lib.data.dataset import ImageDataset, TensorImageDataset
 
 import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from torch.nn import CrossEntropyLoss
+from torch.nn import CrossEntropyLoss, BCELoss, MultiLabelSoftMarginLoss
 
 if __name__ == '__main__':
     train_dir_path = r'/Users/szymek/Documents/idash/small'
@@ -24,13 +24,13 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
-    model = ModelTask2()
+    model = ResNet(6)
     model = model.to(device)
-    optimizer = Adam(model.parameters(), lr=0.001)
-    criterion = CrossEntropyLoss()
+    optimizer = Adam(list(filter(lambda p: p.requires_grad, model.parameters())), lr=0.0001)
+    criterion = MultiLabelSoftMarginLoss()
 
     dataloaders = {'train': train_dataloader,
                    'val': val_dataloader}
     best_model = train_model_2(model, dataloaders, criterion, optimizer,
-                               num_epochs=20, device=device)
+                               num_epochs=50, device=device)
     torch.save(model.state_dict(), os.path.join(artifacts_path, "best_model.pt"))

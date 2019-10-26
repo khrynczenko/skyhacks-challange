@@ -1,6 +1,7 @@
 import torch
 
 from torch import nn, Tensor
+from torch.nn.init import kaiming_normal
 from torchvision import models
 
 
@@ -24,18 +25,28 @@ class ModelTask1(nn.Sequential):
         return self.classifier(x)
 
 
-class ModelTask2(nn.Module):
-    def __init__(self):
-        super(ModelTask2, self).__init__()
-        original_model = models.resnet18(pretrained=True)
-        modules = list(original_model.children())[:-1]
-        self.features = nn.Sequential(*modules)
-        for param in self.features.parameters():
-            param.requires_grad = False
-        self.fc = nn.Linear(original_model.fc.in_features, 6)
+class ResNet(nn.Module):
+    def __init__(self, num_classes):
+        super(ResNet, self).__init__()
 
-    def forward(self, input):
-        out = self.features(input)
-        out = torch.flatten(out, 1)
-        out = self.fc(out)
-        return out
+        original_model = models.resnet18(pretrained=True)
+
+        self.features = nn.Sequential(*list(original_model.children())[:-1])
+
+        num_feats = original_model.fc.in_features
+
+        self.classifier = nn.Sequential(
+            nn.Linear(num_feats, num_classes)
+        )
+
+        for m in self.classifier:
+            kaiming_normal(m.weight)
+
+        for p in self.features.parameters():
+            p.requires_grad = False
+
+    def forward(self, x):
+        f = self.features(x)
+        f = f.view(f.size(0), -1)
+        y = self.classifier(f)
+        return y
