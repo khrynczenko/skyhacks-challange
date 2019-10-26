@@ -34,7 +34,7 @@ class ImageDataset(data.Dataset):
         return img, torch.FloatTensor(np.asarray(self.df.iloc[item, 1:], dtype=np.uint8))
 
     def __len__(self):
-        return len(self.df.shape[0])
+        return self.df.shape[0]
 
 
 class TransformedImageDataset(data.Dataset):
