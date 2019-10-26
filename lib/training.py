@@ -1,6 +1,7 @@
+import os
 import time
 import copy
-
+from tqdm import tqdm
 import numpy as np
 import torch
 
@@ -97,7 +98,7 @@ def train_model_2(model, dataloaders, criterion, optimizer, num_epochs=25,
             running_corrects = 0
 
             # Iterate over data.
-            for inputs, labels in dataloaders[phase]:
+            for inputs, labels in tqdm(dataloaders[phase], total=len(dataloaders[phase])):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -131,6 +132,8 @@ def train_model_2(model, dataloaders, criterion, optimizer, num_epochs=25,
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
+        torch.save(model.state_dict(), os.path.join("./artifacts", f"{epoch}.pt"))
+
 
         print()
 
