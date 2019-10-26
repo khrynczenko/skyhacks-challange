@@ -26,8 +26,8 @@ if __name__ == '__main__':
 
     model = ResNet(6)
     model = model.to(device)
-    optimizer = Adam(list(filter(lambda p: p.requires_grad, model.parameters())), lr=0.0001)
-    criterion = MultiLabelSoftMarginLoss()
+    optimizer = Adam(list(filter(lambda p: p.requires_grad, model.parameters())), lr=0.001)
+    criterion = CrossEntropyLoss()
 
     dataloaders = {'train': train_dataloader,
                    'val': val_dataloader}

@@ -118,8 +118,7 @@ def train_model_2(model, dataloaders, criterion, optimizer, num_epochs=25,
 
                 # statistics
                 running_loss += loss.item()
-                running_corrects += np.sum(
-                    np.asarray(preds.detach().cpu().numpy(), dtype=np.uint8) == labels.detach().cpu().numpy())
+                running_corrects = (preds == labels).sum()
                 pass
 
             epoch_loss = running_loss / len(dataloaders[phase])
