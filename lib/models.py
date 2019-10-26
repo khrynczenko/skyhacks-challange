@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 from torch import nn, Tensor
@@ -39,3 +40,41 @@ class ModelTask2(nn.Module):
         out = torch.flatten(out, 1)
         out = self.fc(out)
         return out
+
+
+class FCNN(nn.Module):
+    def __init__(self, non_linear_mapping_layers: int):
+        super().__init__()
+        self.feature_extraction_1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=56,
+                      kernel_size=5,
+                      padding=2),
+            nn.PReLU())
+        self.feature_extraction_2 = nn.Sequential(
+            nn.Conv2d(in_channels=56, out_channels=20,
+                      kernel_size=5, padding=2),
+            nn.PReLU())
+        self.non_linear_mapping = []
+        for _ in range(non_linear_mapping_layers):
+            self.non_linear_mapping.append(
+                nn.Conv2d(in_channels=20, out_channels=20,
+                          kernel_size=3,
+                          padding=1))
+            self.non_linear_mapping.append(nn.PReLU())
+        self.adaptive_pooling = nn.AdaptiveMaxPool2d((10, 10))
+        self.fc = nn.Sequential(
+            nn.Linear(in_features=2000, out_features=500),
+            nn.ReLU(),
+            nn.Linear(in_features=500, out_features=53),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.feature_extraction_1(x)
+        x = self.feature_extraction_2(x)
+        for mapping in self.non_linear_mapping:
+            x = mapping(x)
+        x = self.adaptive_pooling(x)
+        x = x.reshape((1, 1, 2000))
+        x = self.fc(x)
+        return x
