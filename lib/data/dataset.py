@@ -18,32 +18,27 @@ class Column(enum.Enum):
 
 class ImageDataset(data.Dataset):
     def __init__(self, dir_path: str, csv_path: str):
-        paths = glob.glob(os.path.join(dir_path, '*', '*'))
-        df = pd.read_csv(csv_path)
-        img_names = list(df[Column.FILENAME.value])
-        del df[Column.FILENAME.value]
-        self.data = []
-        self.labels = []
-        paths_names = [os.path.basename(elem) for elem in paths]
-        for i, name in enumerate(img_names):
-            if name in paths_names:
-                self.data.append(paths[paths_names.index(name)])
-                self.labels.append(df.iloc[i].to_numpy())
+        self.dir_path = dir_path
+        self.df = pd.read_csv(csv_path)
 
     def __getitem__(self, item):
-        img = io.read_image(self.data[item])
+        img_name = self.df.iloc[item, 0]
+        paths = glob.glob(os.path.join(self.dir_path, '*', img_name))
+        assert len(paths) == 1
+        img_path = paths[0]
+        img = io.read_image(img_path)
         if img.ndim == 2:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
         elif img.shape[-1] == 4:
             img = img[..., :-1]
-        return img, torch.FloatTensor(self.labels[item])
+        return img, torch.FloatTensor(np.asarray(self.df.iloc[item, 1:], dtype=np.uint8))
 
     def __len__(self):
-        return len(self.data)
+        return len(self.df.shape[0])
 
 
 class TransformedImageDataset(data.Dataset):
-    def __init__(self, dataset: ImageDataset, 
+    def __init__(self, dataset: ImageDataset,
                  image_transformations: Iterable[Callable[[np.ndarray], np.ndarray]]):
         self._dataset = dataset
         self._transformations = image_transformations
