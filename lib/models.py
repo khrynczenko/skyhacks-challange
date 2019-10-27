@@ -1,3 +1,4 @@
+import torch
 from torch import nn, Tensor
 from torchvision import models
 
@@ -6,10 +7,7 @@ class ModelTask1(nn.Sequential):
     def __init__(self, no_of_classes, num_of_neurons: int = 64,
                  freeze_extractor_weights: bool = True):
         super(ModelTask1, self).__init__()
-        self.extractor = models.resnet34(pretrained=True)
-        if freeze_extractor_weights:
-            for param in self.extractor.parameters():
-                param.requires_grad = False
+        self.extractor = models.resnet18(pretrained=False)
         num_ftrs = self.extractor.fc.in_features
         self.classifier = nn.Sequential(
             nn.Linear(in_features=num_ftrs, out_features=1024),
@@ -19,7 +17,6 @@ class ModelTask1(nn.Sequential):
             nn.Linear(in_features=512, out_features=no_of_classes),
         )
         self.extractor.fc = self.classifier
-
     def forward(self, input: Tensor) -> Tensor:
         return self.extractor(input)
 
@@ -180,3 +177,85 @@ class FCNN3(nn.Module):
         out1 = self.fc1(x)
         out2 = self.fc2(x)
         return out1, out2
+
+
+class FCNN_SC_1(nn.Module):
+    def __init__(self, non_linear_mapping_layers: int):
+        super().__init__()
+        self.feature_extraction_1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=64,
+                      kernel_size=5,
+                      padding=2),
+            nn.BatchNorm2d(64),
+            nn.PReLU())
+        self.feature_extraction_2 = nn.Sequential(
+            nn.Conv2d(in_channels=67, out_channels=24,
+                      kernel_size=5, padding=2),
+            nn.PReLU())
+        self.non_linear_mapping = []
+        for i in range(non_linear_mapping_layers):
+            self.non_linear_mapping.append(
+                nn.Conv2d(in_channels=24, out_channels=24,
+                          kernel_size=3,
+                          padding=1))
+            if i % 2 == 0:
+                self.non_linear_mapping.append(nn.BatchNorm2d(24))
+            self.non_linear_mapping.append(nn.PReLU())
+        self.non_linear_mapping = nn.Sequential(*self.non_linear_mapping)
+        self.adaptive_pooling = nn.AdaptiveMaxPool2d((5, 5))
+        self.fc = nn.Sequential(
+            nn.Linear(in_features=675, out_features=128),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=53),
+            nn.Sigmoid()
+        )
+
+    def forward(self, input: Tensor):
+        x = self.feature_extraction_1(input)
+        x = self.feature_extraction_2(torch.cat([input, x], dim=1))
+        for mapping in self.non_linear_mapping:
+            x = mapping(x)
+        x = self.adaptive_pooling(torch.cat([input, x], dim=1))
+        x = x.reshape((x.shape[0], 675))
+        x = self.fc(x)
+        return x
+
+class FCNN_SC_2(nn.Module):
+    def __init__(self, non_linear_mapping_layers: int):
+        super().__init__()
+        self.feature_extraction_1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=64,
+                      kernel_size=5,
+                      padding=2),
+            nn.BatchNorm2d(64),
+            nn.PReLU())
+        self.feature_extraction_2 = nn.Sequential(
+            nn.Conv2d(in_channels=67, out_channels=24,
+                      kernel_size=5, padding=2),
+            nn.PReLU())
+        self.non_linear_mapping = []
+        for i in range(non_linear_mapping_layers):
+            self.non_linear_mapping.append(
+                nn.Conv2d(in_channels=24, out_channels=24,
+                          kernel_size=3,
+                          padding=1))
+            if i % 2 == 0:
+                self.non_linear_mapping.append(nn.BatchNorm2d(24))
+            self.non_linear_mapping.append(nn.PReLU())
+        self.non_linear_mapping = nn.Sequential(*self.non_linear_mapping)
+        self.adaptive_pooling = nn.AdaptiveMaxPool2d((5, 5))
+        self.fc = nn.Sequential(
+            nn.Linear(in_features=675, out_features=128),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=6),
+        )
+
+    def forward(self, input: Tensor):
+        x = self.feature_extraction_1(input)
+        x = self.feature_extraction_2(torch.cat([input, x], dim=1))
+        for mapping in self.non_linear_mapping:
+            x = mapping(x)
+        x = self.adaptive_pooling(torch.cat([input, x], dim=1))
+        x = x.reshape((x.shape[0], 675))
+        x = self.fc(x)
+        return x
