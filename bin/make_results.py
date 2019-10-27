@@ -14,7 +14,7 @@ from torchvision import transforms
 model_t1 = FCNN1(4)
 model_t2 = FCNN2(4)
 model_t3 = FCNN3(4)
-weights_t1_path = "weights/FCNN1-e22.pt"
+weights_t1_path = "weights/FCNN1-e38.pt"
 weights_t2_path = "weights/task2model-e8.pt"
 weights_t3_path = "weights/task3model-e40.pt"
 model_t1.load_state_dict(torch.load(weights_t1_path, map_location="cpu"))
@@ -34,7 +34,7 @@ labels_task_1 = ['Bathroom', 'Bathroom cabinet', 'Bathroom sink', 'Bathtub', 'Be
 
 image_names = []
 images = []
-with open("results-task1-e22-task2-e8-task3-e40.csv", "w", newline="") as csvfile:
+with open("results-task1-e38-task2-e8-task3-e40.csv", "w", newline="") as csvfile:
     # writer = csv.DictWriter(csvfile,
     #                         fieldnames=['filename', 'standard', 'task2_class', 'tech_cond'] + labels_task_1)
     writer = csv.writer(csvfile)
